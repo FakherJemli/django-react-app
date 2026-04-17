@@ -3,6 +3,15 @@ on:
   push:
     branches: [main, master]
   pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,11 +24,16 @@ jobs:
         with:
           node-version: '18'
           cache: npm
-          cache-dependency-path: ./frontend/package-lock.json
+          # cache-dependency-path is auto-detected from package-lock.json
+
       - name: Install dependencies
+        # npm ci requires package-lock.json — commit it to your repository
         run: npm ci
+
       - name: Build
         run: npm run build
+
       - name: Test
+        # continue-on-error: remove once tests cover the critical paths
         run: npm test -- --watchAll=false --passWithNoTests
         continue-on-error: true
